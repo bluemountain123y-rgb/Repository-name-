@@ -2,41 +2,53 @@ import streamlit as st
 import random
 from data import quiz_data
 
-# アプリのタイトル
-st.title("🔥 コンクリート主任技師試験対策アプリ")
-st.write("過去問からランダムに出題します。サクッと勉強しましょう！")
+st.set_page_config(page_title="コンクリート試験対策", layout="centered")
 
-# セッション状態（クイズの進行）を管理する
-if 'current_question' not in st.session_state:
-    st.session_state.current_question = random.choice(quiz_data)
-    st.session_state.show_answer = False
+# サイドバーでモード選択
+st.sidebar.title("🛠️ メニュー")
+mode = st.sidebar.radio("出題モード", ["全カテゴリからランダム", "カテゴリ別に解く"])
+q_type = st.sidebar.radio("出題形式", ["四者択一", "〇×形式"])
 
-# 問題を表示
-q = st.session_state.current_question
-st.info(f"【問題】\n\n{q['question']}")
+# データのフィルタリング
+filtered_data = [q for q in quiz_data if q["type"] == q_type]
 
-# 答えるボタン
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("⭕ 正解（○）", use_container_width=True):
-        st.session_state.show_answer = True
-        st.session_state.user_answer = "○"
-with col2:
-    if st.button("❌ 不正解（×）", use_container_width=True):
-        st.session_state.show_answer = True
-        st.session_state.user_answer = "×"
+if mode == "カテゴリ別に解く":
+    categories = [
+        "①コンクリート用材料", "②コンクリートの性質", "③環境・経年による劣化",
+        "④配（調）合設計", "⑤製造・品質管理", "⑥施工",
+        "⑦特殊コンクリート", "⑧構造・設計・ひび割れ"
+    ]
+    selected_cat = st.sidebar.selectbox("カテゴリを選択", categories)
+    filtered_data = [q for q in filtered_data if q["category"] == selected_cat]
 
-# 正解と解説を表示
-if st.session_state.show_answer:
-    if st.session_state.user_answer == q['answer']:
-        st.success("✨ 正解です！")
-    else:
-        st.error(f"判定：残念！答えは {q['answer']} です。")
+# セッション状態の初期化
+if "current_question" not in st.session_state or st.sidebar.button("問題をリセット"):
+    st.session_state.current_question = random.choice(filtered_data) if filtered_data else None
+    st.session_state.show_explanation = False
+
+st.title("🏗️ コンクリート試験対策")
+
+if not filtered_data:
+    st.info("現在、選択された条件に合う問題がありません。データを追加してください。")
+else:
+    q = st.session_state.current_question
     
-    st.write(f"**【解説】**\n{q['explanation']}")
+    st.subheader(f"【{q['category']}】")
+    st.info(q["question"])
     
-    # 次の問題へ進むボタン
-    if st.button("次の問題へ"):
-        st.session_state.current_question = random.choice(quiz_data)
-        st.session_state.show_answer = False
-        st.rerun()
+    # 回答ボタンの表示
+    cols = st.columns(len(q["options"]))
+    for i, option in enumerate(q["options"]):
+        if cols[i].button(option):
+            if option == q["answer"]:
+                st.success("✨ 正解！")
+            else:
+                st.error("❌ 不正解...")
+            st.session_state.show_explanation = True
+            
+    if st.session_state.show_explanation:
+        st.write(f"**【解説】** {q['explanation']}")
+        if st.button("次の問題へ"):
+            st.session_state.current_question = random.choice(filtered_data)
+            st.session_state.show_explanation = False
+            st.rerun()
