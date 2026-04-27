@@ -3,8 +3,9 @@ import pandas as pd
 import random
 
 # --- ページ設定 ---
-st.set_page_config(page_title="コンクリート試験対策アプリ", page_icon="🏗️", layout="centered")
-# --- 🎨 アーバン・サイバー・コンクリート CSS (題名強化版) ---
+st.set_page_config(page_title="コンクリート試験対策 Pro", page_icon="🏗️", layout="centered")
+
+# --- 🎨 アーバン・サイバー・コンクリート CSS ---
 st.markdown("""
     <style>
     /* 1. コンクリート背景 */
@@ -20,19 +21,19 @@ st.markdown("""
         font-family: 'Roboto Mono', monospace;
     }
 
-    /* 2. 題名（追加・強化） */
+    /* 2. 題名（ネオンエフェクト） */
     .main-title {
-        font-size: 3rem;
+        font-size: 2.8rem;
         font-weight: 800;
         color: #fff;
         text-align: center;
         text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff, 0 0 40px #00c3ff;
-        margin-bottom: 0px;
-        padding-top: 20px;
-        letter-spacing: 2px;
+        margin-bottom: 5px;
+        padding-top: 10px;
+        letter-spacing: 1px;
     }
     .sub-title {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: #00c3ff;
         text-align: center;
         margin-bottom: 30px;
@@ -89,7 +90,7 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
-# --- 1. データの読み込み関数 ---
+# --- 1. データの読み込み ---
 @st.cache_data
 def load_data():
     try:
@@ -100,7 +101,6 @@ def load_data():
             for i in range(1, 5):
                 opt = row.get(f'opt{i}')
                 if pd.notna(opt): options.append(str(opt))
-            
             data.append({
                 "id": str(row.get('id', '不明')),
                 "type": str(row.get('type', '四肢択一')),
@@ -127,21 +127,15 @@ if "last_result" not in st.session_state: st.session_state.last_result = None
 
 # --- 3. サイドバーの設定 ---
 st.sidebar.title("🛠️ 出題設定")
-
-# 形式の選択
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
 
-# カテゴリ・年度の絞り込み機能
 if base_data:
-    # Excelから自動でリストを作成（例：①コンクリート用材料...など）
     categories = ["全カテゴリ"] + sorted(list(set([q['category'] for q in base_data])))
     years = ["全年度"] + sorted(list(set([q['year'] for q in base_data])), reverse=True)
-    
     selected_cat = st.sidebar.selectbox("カテゴリで絞り込む", categories)
     selected_year = st.sidebar.selectbox("年度で絞り込む", years)
     
-    # フィルタリング実行
     filtered_data = base_data
     if selected_cat != "全カテゴリ":
         filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
@@ -150,10 +144,8 @@ if base_data:
 else:
     filtered_data = []
 
-# 出題数の設定
-target_total = st.sidebar.slider("出題数を設定", min_value=5, max_value=50, value=10, step=5)
+target_total = st.sidebar.slider("出題数を設定", 5, 50, 10, 5)
 
-# リセットボタン
 if st.sidebar.button("記録をリセットして最初から", use_container_width=True):
     st.session_state.count = 0
     st.session_state.correct = 0
@@ -163,12 +155,13 @@ if st.sidebar.button("記録をリセットして最初から", use_container_wi
     st.rerun()
 
 # --- 4. 進行状況の表示 ---
-st.title(f"🏗️ {q_type}モード")
+# 🏗️ ここをオリジナルの題名に書き換えました！
+st.markdown('<p class="main-title">コンクリート主任技士</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="sub-title">試験対策 {q_type}MODE</p>', unsafe_allow_html=True)
 
 if not filtered_data:
-    st.info("条件に合う問題がありません。Excelのカテゴリ名を確認してください。")
+    st.info("条件に合う問題がありません。")
 else:
-    # プログレスバー
     progress_val = min(st.session_state.count / target_total, 1.0)
     st.progress(progress_val)
     st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
@@ -176,36 +169,36 @@ else:
 
     # --- 5. メイン画面の処理 ---
     if st.session_state.count >= target_total:
-        # リザルト画面
         st.balloons()
         st.title("🏆 Result")
         score_rate = int((st.session_state.correct / target_total) * 100)
-        
         col1, col2 = st.columns(2)
         col1.metric("正答率", f"{score_rate}%")
         col2.metric("正解数", f"{st.session_state.correct} / {target_total}")
-        
         if st.button("もう一度挑戦する", type="primary", use_container_width=True):
             st.session_state.count = 0
             st.session_state.correct = 0
             st.session_state.current_question = None
             st.rerun()
     else:
-        # 出題中
         if st.session_state.current_question is None or st.session_state.current_question not in filtered_data:
             st.session_state.current_question = random.choice(filtered_data)
         
         q = st.session_state.current_question
-        st.caption(f"ID: {q['id']} | {q['year']}年 | {q['category']}")
-        st.subheader("問題")
-        st.info(f"**{q['question']}**")
+        
+        # 問題表示カード（ピーコン装飾付き）
+        st.markdown(f"""
+            <div class="q-card">
+                <small style="color: #888;">ID: {q['id']} | {q['year']}年 | {q['category']}</small>
+                <h3 style="margin-top: 15px;">{q['question']}</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         if st.session_state.last_result == "correct":
             st.success("✨ 正解！")
         elif st.session_state.last_result == "wrong":
             st.error(f"❌ 不正解...（正解：{q['answer']}）")
 
-        # ボタン生成
         for option in q['options']:
             if st.button(option, use_container_width=True, disabled=st.session_state.show_explanation, key=option):
                 if str(option).strip() == str(q["answer"]).strip():
