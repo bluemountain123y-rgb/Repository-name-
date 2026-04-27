@@ -42,8 +42,8 @@ st.markdown("""
         border-radius: 10px;
     }
     </style>
-    """, unsafe_allow_stdio=True)
-    
+    """, unsafe_allow_html=True)
+
 # --- 1. データの読み込み関数 ---
 @st.cache_data
 def load_data():
