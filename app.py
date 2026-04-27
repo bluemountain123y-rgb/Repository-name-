@@ -1,9 +1,39 @@
 import streamlit as st
 import pandas as pd
 import random
+import streamlit_authenticator as stauth
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート主任技士 試験対策", page_icon="🏗️", layout="centered")
+
+# --- 1. ユーザー認証の設定 ---
+# names: 画面に表示される名前
+# usernames: ログイン時に入力するID
+# hashed_passwords: hash_gen.pyで生成した「暗号」を貼り付けます
+names = ["管理者", "テストユーザー"]
+usernames = ["admin", "user01"]
+hashed_passwords = [
+    'ここに管理者のハッシュ($2b$12$...)を貼る', 
+    'ここにuser01のハッシュ($2b$12$...)を貼る'
+] 
+
+authenticator = stauth.Authenticate(
+    names, usernames, hashed_passwords,
+    "concrete_quiz_cookie", "auth_key", cookie_expiry_days=30
+)
+
+# ログイン画面を出す
+name, authentication_status, username = authenticator.login("ログイン", "main")
+
+if authentication_status == False:
+    st.error("ユーザー名またはパスワードが正しくありません")
+elif authentication_status == None:
+    st.warning("ユーザー名とパスワードを入力してください")
+elif authentication_status:
+    # --- 【重要】ここから下が「ログイン成功後」に見えるエリアです ---
+    # すべての行の左側に「半角スペース4つ分」の段落（インデント）が入っています
+    
+    authenticator.logout("ログアウト", "sidebar")
 
 # --- 🎨 サイバー・コンクリート・デザイン（サイズ調整版） ---
 st.markdown("""
@@ -74,6 +104,9 @@ st.markdown("""
     }
     </style>
     """, unsafe_allow_html=True)
+
+st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
+    st.write(f"ようこそ、{name} さん。学習を始めましょう。")
 
 # --- 1. データの読み込み ---
 @st.cache_data
