@@ -16,6 +16,11 @@ st.set_page_config(page_title="コンクリート試験対策アプリ", layout=
 # --- サイドバーの設定 ---
 st.sidebar.title("🛠️ 出題設定")
 
+# 進捗率を計算（0.0 〜 1.0）
+progress = min(st.session_state.count / st.session_state.goal, 1.0)
+st.progress(progress) # これがバーを表示する命令！
+st.write(f"📈 進捗: {st.session_state.count} / {st.session_state.goal} 問完了")
+
 # 1. 出題形式の選択
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
