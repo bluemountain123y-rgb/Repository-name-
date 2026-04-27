@@ -5,10 +5,10 @@ import random
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート主任技士 試験対策", page_icon="🏗️", layout="centered")
 
-# --- 🎨 サイバー・コンクリート・リッチデザイン ---
+# --- 🎨 サイバー・コンクリート・デザイン（サイズ調整版） ---
 st.markdown("""
     <style>
-    /* 1. コンクリート背景 */
+    /* 1. 背景設定 */
     .stApp {
         background-color: #2b2b2b;
         background-image: 
@@ -20,27 +20,27 @@ st.markdown("""
         color: #e0e0e0;
     }
 
-    /* 2. 超巨大・ネオン題名（日本語） */
+    /* 2. 【最重要】題名を巨大化 */
     .hero-title {
-        font-size: 3.5rem; /* スマホで見やすいよう微調整した巨大サイズ */
+        font-size: 4.5rem !important; /* 前よりさらに大きくしました */
         font-weight: 900;
         color: #fff;
         text-align: center;
-        text-shadow: 0 0 15px #00c3ff, 0 0 30px #00c3ff, 0 0 45px #00c3ff;
-        margin-bottom: -5px;
-        padding-top: 30px;
-        line-height: 1.2;
+        text-shadow: 0 0 20px #00c3ff, 0 0 40px #00c3ff;
+        margin-top: 20px;
+        margin-bottom: 0px;
+        line-height: 1.1;
     }
     .hero-subtitle {
-        font-size: 1.4rem;
+        font-size: 1.8rem;
         color: #00c3ff;
         text-align: center;
         margin-bottom: 40px;
         font-weight: bold;
-        letter-spacing: 4px;
+        letter-spacing: 5px;
     }
 
-    /* 3. 問題カードの文字サイズ調整 */
+    /* 3. 【修正】問題文を適切なサイズに */
     .q-card {
         padding: 25px;
         border-radius: 15px;
@@ -50,26 +50,25 @@ st.markdown("""
         margin-bottom: 25px;
     }
     .q-card h3 {
-        font-size: 1.5rem !important; /* 問題文を題名より小さく、かつ読みやすく */
+        font-size: 1.3rem !important; /* 問題文を小さくして読みやすく */
         color: #fff;
-        line-height: 1.5;
+        line-height: 1.6;
+        font-weight: 500;
     }
 
-    /* 4. サイドバー・ボタンの日本語化と装飾 */
+    /* 4. サイドバー・ボタン設定 */
     div.stButton > button {
         border-radius: 8px;
         border: 1px solid #00c3ff;
         background: rgba(0, 195, 255, 0.1) !important;
         color: #00c3ff !important;
         font-weight: bold;
-        font-size: 1rem;
     }
     div.stButton > button:hover {
         background: rgba(0, 195, 255, 0.3) !important;
         box-shadow: 0 0 15px rgba(0, 195, 255, 0.8);
     }
     
-    /* 進捗バー */
     .stProgress > div > div > div > div {
         background-color: #00c3ff;
     }
@@ -106,11 +105,11 @@ for key in ["count", "correct", "show_explanation", "current_question", "last_re
     if key not in st.session_state:
         st.session_state[key] = 0 if key in ["count", "correct"] else None
 
-# --- 3. 巨大題名の表示（日本語） ---
+# --- 3. 題名の表示（日本語固定） ---
 st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
 st.markdown('<p class="hero-subtitle">試験対策システム</p>', unsafe_allow_html=True)
 
-# --- 4. サイドバー設定（すべて日本語に！） ---
+# --- 4. サイドバー設定 ---
 st.sidebar.markdown("### ⚙️ 出題設定")
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
@@ -156,7 +155,7 @@ else:
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     else:
-        # 進行状況
+        # 進捗
         progress_val = min(st.session_state.count / target_total, 1.0)
         st.progress(progress_val)
         st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
@@ -166,7 +165,7 @@ else:
         
         q = st.session_state.current_question
         
-        # 問題カード
+        # 問題カード（文字サイズを1.3remに抑制）
         st.markdown(f'<div class="q-card"><small style="color: #888;">ID: {q["id"]} | {q["year"]} | {q["category"]}</small><h3>{q["question"]}</h3></div>', unsafe_allow_html=True)
         
         if st.session_state.last_result == "correct": st.success("✨ 正解です！")
