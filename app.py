@@ -13,19 +13,18 @@ def load_data():
         data = []
         for _, row in df.iterrows():
             options = []
-            if pd.notna(row.get('opt1')): options.append(str(row['opt1']))
-            if pd.notna(row.get('opt2')): options.append(str(row['opt2']))
-            if pd.notna(row.get('opt3')): options.append(str(row['opt3']))
-            if pd.notna(row.get('opt4')): options.append(str(row['opt4']))
+            for i in range(1, 5):
+                opt = row.get(f'opt{i}')
+                if pd.notna(opt): options.append(str(opt))
             
             data.append({
                 "id": str(row.get('id', '不明')),
-                "type": str(row['type']),
-                "year": str(row['year']),
-                "category": str(row['category']),
+                "type": str(row.get('type', '四肢択一')),
+                "year": str(row.get('year', '不明')),
+                "category": str(row.get('category', '未分類')),
                 "question": str(row['question']),
                 "answer": str(row['answer']),
-                "explanation": str(row['explanation']),
+                "explanation": str(row.get('explanation', '解説なし')),
                 "options": options
             })
         return data
@@ -44,11 +43,33 @@ if "last_result" not in st.session_state: st.session_state.last_result = None
 
 # --- 3. サイドバーの設定 ---
 st.sidebar.title("🛠️ 出題設定")
-q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
-target_total = st.sidebar.slider("出題数を設定", min_value=5, max_value=50, value=10, step=5)
 
+# 形式の選択
+q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
 
+# カテゴリ・年度の絞り込み機能
+if base_data:
+    # Excelから自動でリストを作成（例：①コンクリート用材料...など）
+    categories = ["全カテゴリ"] + sorted(list(set([q['category'] for q in base_data])))
+    years = ["全年度"] + sorted(list(set([q['year'] for q in base_data])), reverse=True)
+    
+    selected_cat = st.sidebar.selectbox("カテゴリで絞り込む", categories)
+    selected_year = st.sidebar.selectbox("年度で絞り込む", years)
+    
+    # フィルタリング実行
+    filtered_data = base_data
+    if selected_cat != "全カテゴリ":
+        filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
+    if selected_year != "全年度":
+        filtered_data = [q for q in filtered_data if q['year'] == selected_year]
+else:
+    filtered_data = []
+
+# 出題数の設定
+target_total = st.sidebar.slider("出題数を設定", min_value=5, max_value=50, value=10, step=5)
+
+# リセットボタン
 if st.sidebar.button("記録をリセットして最初から", use_container_width=True):
     st.session_state.count = 0
     st.session_state.correct = 0
@@ -60,71 +81,63 @@ if st.sidebar.button("記録をリセットして最初から", use_container_wi
 # --- 4. 進行状況の表示 ---
 st.title(f"🏗️ {q_type}モード")
 
-# 進捗バーの計算
-progress_val = min(st.session_state.count / target_total, 1.0)
-st.progress(progress_val)
-st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
-st.divider()
-
-# --- 5. メイン画面の処理 ---
-if not base_data:
-    st.info("データが見つかりません。")
-elif st.session_state.count >= target_total:
-    # 🏆 終了画面：正答率をデカデカと表示！
-    st.balloons()
-    st.title("🏆 Result")
-    
-    # 正答率の計算
-    score_rate = int((st.session_state.correct / target_total) * 100)
-    
-    # メトリック（デカ文字）で表示
-    col1, col2 = st.columns(2)
-    col1.metric("正答率", f"{score_rate}%")
-    col2.metric("正解数", f"{st.session_state.correct} / {target_total}")
-    
-    if score_rate == 100:
-        st.success("🎯 完璧です！全問正解！")
-    elif score_rate >= 70:
-        st.success("✨ 素晴らしい！合格圏内です！")
-    else:
-        st.warning("💪 伸びしろがあります！もう一度挑戦しましょう。")
-
-    if st.button("もう一度挑戦する", type="primary", use_container_width=True):
-        st.session_state.count = 0
-        st.session_state.correct = 0
-        st.session_state.current_question = None
-        st.rerun()
+if not filtered_data:
+    st.info("条件に合う問題がありません。Excelのカテゴリ名を確認してください。")
 else:
-    # 問題出題中の画面
-    if st.session_state.current_question is None:
-        st.session_state.current_question = random.choice(base_data)
-    
-    q = st.session_state.current_question
-    st.caption(f"ID: {q['id']} | {q['year']}年 | {q['category']}")
-    st.subheader("問題")
-    st.info(f"**{q['question']}**")
-    
-    if st.session_state.last_result == "correct":
-        st.success("✨ 正解！")
-    elif st.session_state.last_result == "wrong":
-        st.error(f"❌ 不正解...（正解：{q['answer']}）")
+    # プログレスバー
+    progress_val = min(st.session_state.count / target_total, 1.0)
+    st.progress(progress_val)
+    st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
+    st.divider()
 
-    for option in q['options']:
-        if st.button(option, use_container_width=True, disabled=st.session_state.show_explanation, key=option):
-            if str(option).strip() == str(q["answer"]).strip():
-                st.session_state.correct += 1
-                st.session_state.last_result = "correct"
-            else:
-                st.session_state.last_result = "wrong"
-            st.session_state.show_explanation = True
+    # --- 5. メイン画面の処理 ---
+    if st.session_state.count >= target_total:
+        # リザルト画面
+        st.balloons()
+        st.title("🏆 Result")
+        score_rate = int((st.session_state.correct / target_total) * 100)
+        
+        col1, col2 = st.columns(2)
+        col1.metric("正答率", f"{score_rate}%")
+        col2.metric("正解数", f"{st.session_state.correct} / {target_total}")
+        
+        if st.button("もう一度挑戦する", type="primary", use_container_width=True):
+            st.session_state.count = 0
+            st.session_state.correct = 0
+            st.session_state.current_question = None
             st.rerun()
-            
-    if st.session_state.show_explanation:
-        with st.expander("📝 解説をチェック", expanded=True):
-            st.write(q["explanation"])
-            if st.button("次の問題へ ➡️", type="primary", use_container_width=True):
-                st.session_state.count += 1
-                st.session_state.current_question = random.choice(base_data)
-                st.session_state.show_explanation = False
-                st.session_state.last_result = None
+    else:
+        # 出題中
+        if st.session_state.current_question is None or st.session_state.current_question not in filtered_data:
+            st.session_state.current_question = random.choice(filtered_data)
+        
+        q = st.session_state.current_question
+        st.caption(f"ID: {q['id']} | {q['year']}年 | {q['category']}")
+        st.subheader("問題")
+        st.info(f"**{q['question']}**")
+        
+        if st.session_state.last_result == "correct":
+            st.success("✨ 正解！")
+        elif st.session_state.last_result == "wrong":
+            st.error(f"❌ 不正解...（正解：{q['answer']}）")
+
+        # ボタン生成
+        for option in q['options']:
+            if st.button(option, use_container_width=True, disabled=st.session_state.show_explanation, key=option):
+                if str(option).strip() == str(q["answer"]).strip():
+                    st.session_state.correct += 1
+                    st.session_state.last_result = "correct"
+                else:
+                    st.session_state.last_result = "wrong"
+                st.session_state.show_explanation = True
                 st.rerun()
+                
+        if st.session_state.show_explanation:
+            with st.expander("📝 解説をチェック", expanded=True):
+                st.write(q["explanation"])
+                if st.button("次の問題へ ➡️", type="primary", use_container_width=True):
+                    st.session_state.count += 1
+                    st.session_state.current_question = random.choice(filtered_data)
+                    st.session_state.show_explanation = False
+                    st.session_state.last_result = None
+                    st.rerun()
