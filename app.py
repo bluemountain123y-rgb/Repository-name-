@@ -4,10 +4,10 @@ import random
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート試験対策アプリ", page_icon="🏗️", layout="centered")
-# --- 🎨 アーバン・サイバー・コンクリート CSS ---
+# --- 🎨 アーバン・サイバー・コンクリート CSS (題名強化版) ---
 st.markdown("""
     <style>
-    /* 1. コンクリート背景（ピーコン模様入り） */
+    /* 1. コンクリート背景 */
     .stApp {
         background-color: #2b2b2b;
         background-image: 
@@ -17,20 +17,39 @@ st.markdown("""
         background-size: 100px 100px, 100px 100px, 100% 100%;
         background-position: 0 0, 50px 50px, 0 0;
         color: #e0e0e0;
-        font-family: 'Roboto Mono', monospace; /* AIっぽい等幅フォント */
+        font-family: 'Roboto Mono', monospace;
     }
 
-    /* 2. ネオン・問題カード */
+    /* 2. 題名（追加・強化） */
+    .main-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #fff;
+        text-align: center;
+        text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff, 0 0 40px #00c3ff;
+        margin-bottom: 0px;
+        padding-top: 20px;
+        letter-spacing: 2px;
+    }
+    .sub-title {
+        font-size: 1.2rem;
+        color: #00c3ff;
+        text-align: center;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+    }
+
+    /* 3. ネオン・問題カード */
     .q-card {
         padding: 25px;
         border-radius: 15px;
         background: rgba(40, 40, 40, 0.8);
-        border: 2px solid #00c3ff; /* サイバーブルー */
+        border: 2px solid #00c3ff;
         box-shadow: 0 0 15px rgba(0, 195, 255, 0.5), inset 0 0 10px rgba(0, 195, 255, 0.2);
         margin-bottom: 25px;
         position: relative;
     }
-    /* ピーコン（穴）の装飾をカードの四隅に */
     .q-card::before, .q-card::after {
         content: '';
         position: absolute;
@@ -42,68 +61,31 @@ st.markdown("""
     .q-card::before { top: 10px; left: 10px; }
     .q-card::after { top: 10px; right: 10px; }
 
-    .q-card h3 {
-        color: #fff;
-        text-shadow: 0 0 5px rgba(255,255,255,0.5);
-        margin-top: 15px;
-    }
-
-    /* 3. サイバー・ボタン */
+    /* 4. サイバー・ボタン */
     div.stButton > button {
         border-radius: 5px;
         border: 1px solid #00c3ff;
         background: rgba(0, 195, 255, 0.1) !important;
         color: #00c3ff !important;
         font-weight: bold;
-        transition: all 0.2s ease;
         text-transform: uppercase;
-        letter-spacing: 1px;
     }
     div.stButton > button:hover {
         background: rgba(0, 195, 255, 0.3) !important;
         box-shadow: 0 0 10px rgba(0, 195, 255, 0.8);
-        transform: translateY(-1px);
     }
     
-    /* 次へボタン（アンバー色） */
     div.stButton > button[kind="primary"] {
         border: 1px solid #ff9f00;
         background: rgba(255, 159, 0, 0.1) !important;
         color: #ff9f00 !important;
     }
-    div.stButton > button[kind="primary"]:hover {
-        background: rgba(255, 159, 0, 0.3) !important;
-        box-shadow: 0 0 10px rgba(255, 159, 0, 0.8);
-    }
 
-    /* 4. 進捗バー・成績・その他 */
+    /* プログレスバー */
     .stProgress > div > div > div > div {
-        background-color: #00c3ff; /* バーの色 */
-    }
-    
-    /* タイトルのグロー効果 */
-    h1 {
-        color: #fff;
-        text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff;
-        text-align: center;
-    }
-    
-    /* 解説・成績カード */
-    .info-card {
-        background: rgba(30, 30, 30, 0.9);
-        padding: 20px;
-        border-radius: 10px;
-        border: 1px solid #444;
-        margin-top: 15px;
-    }
-
-    /* サイドバーのサイバー化 */
-    .css-1d391kg, [data-testid="stSidebar"] {
-        background-color: #1a1a1a;
-        border-right: 1px solid #333;
+        background-color: #00c3ff;
     }
     </style>
-    
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
