@@ -4,7 +4,46 @@ import random
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート試験対策アプリ", page_icon="🏗️", layout="centered")
-
+# --- カスタムデザイン (CSS) ---
+st.markdown("""
+    <style>
+    /* メイン背景とカードのデザイン */
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    .main-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    /* ボタンのカスタマイズ */
+    div.stButton > button {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+        background-color: white;
+        transition: all 0.3s ease;
+        font-size: 16px;
+        padding: 10px 20px;
+    }
+    div.stButton > button:hover {
+        border-color: #ff4b4b;
+        color: #ff4b4b;
+        background-color: #fff5f5;
+        transform: translateY(-2px);
+    }
+    /* 正解・不正解の強調 */
+    .result-text {
+        font-weight: bold;
+        font-size: 1.2rem;
+        text-align: center;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    </style>
+    """, unsafe_allow_stdio=True)
+    
 # --- 1. データの読み込み関数 ---
 @st.cache_data
 def load_data():
