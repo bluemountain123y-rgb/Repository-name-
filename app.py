@@ -4,71 +4,107 @@ import random
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート試験対策アプリ", page_icon="🏗️", layout="centered")
-# --- カスタムデザイン (CSS) - ライト/ダーク両対応 ---
+# --- 🎨 アーバン・サイバー・コンクリート CSS ---
 st.markdown("""
     <style>
-    /* 全体の文字色を自動調整 */
+    /* 1. コンクリート背景（ピーコン模様入り） */
     .stApp {
-        color: inherit;
+        background-color: #2b2b2b;
+        background-image: 
+            radial-gradient(#3a3a3a 15%, transparent 16%),
+            radial-gradient(#3a3a3a 15%, transparent 16%),
+            linear-gradient(#2b2b2b 0%, #333333 100%);
+        background-size: 100px 100px, 100px 100px, 100% 100%;
+        background-position: 0 0, 50px 50px, 0 0;
+        color: #e0e0e0;
+        font-family: 'Roboto Mono', monospace; /* AIっぽい等幅フォント */
     }
-    
-    /* 問題表示カード - 枠線をくっきりさせる */
+
+    /* 2. ネオン・問題カード */
     .q-card {
-        padding: 20px;
+        padding: 25px;
         border-radius: 15px;
-        border: 2px solid #ff4b4b; /* 赤い枠線 */
-        background-color: rgba(255, 75, 75, 0.05); /* ほんのり赤い背景 */
-        margin-bottom: 20px;
-        color: inherit; /* 文字色は全体のテーマに合わせる */
+        background: rgba(40, 40, 40, 0.8);
+        border: 2px solid #00c3ff; /* サイバーブルー */
+        box-shadow: 0 0 15px rgba(0, 195, 255, 0.5), inset 0 0 10px rgba(0, 195, 255, 0.2);
+        margin-bottom: 25px;
+        position: relative;
     }
-    .q-card small {
-        color: #888; /* IDなどは少し薄く */
+    /* ピーコン（穴）の装飾をカードの四隅に */
+    .q-card::before, .q-card::after {
+        content: '';
+        position: absolute;
+        width: 10px; height: 10px;
+        background: #1a1a1a;
+        border-radius: 50%;
+        box-shadow: inset 0 2px 3px rgba(0,0,0,0.5);
     }
-    
-    /* ボタンのカスタマイズ - 読みやすさ最優先 */
+    .q-card::before { top: 10px; left: 10px; }
+    .q-card::after { top: 10px; right: 10px; }
+
+    .q-card h3 {
+        color: #fff;
+        text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        margin-top: 15px;
+    }
+
+    /* 3. サイバー・ボタン */
     div.stButton > button {
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-        background-color: white !important; /* ボタン背景は常に白 */
-        color: #333 !important; /* ボタン文字は常に濃いグレー */
-        transition: all 0.3s ease;
-        font-size: 16px;
-        padding: 10px 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-radius: 5px;
+        border: 1px solid #00c3ff;
+        background: rgba(0, 195, 255, 0.1) !important;
+        color: #00c3ff !important;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     div.stButton > button:hover {
-        border-color: #ff4b4b;
-        color: #ff4b4b !important;
-        background-color: #fff5f5 !important;
-        transform: translateY(-2px);
+        background: rgba(0, 195, 255, 0.3) !important;
+        box-shadow: 0 0 10px rgba(0, 195, 255, 0.8);
+        transform: translateY(-1px);
     }
     
-    /* 解説・リザルトカード */
+    /* 次へボタン（アンバー色） */
+    div.stButton > button[kind="primary"] {
+        border: 1px solid #ff9f00;
+        background: rgba(255, 159, 0, 0.1) !important;
+        color: #ff9f00 !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background: rgba(255, 159, 0, 0.3) !important;
+        box-shadow: 0 0 10px rgba(255, 159, 0, 0.8);
+    }
+
+    /* 4. 進捗バー・成績・その他 */
+    .stProgress > div > div > div > div {
+        background-color: #00c3ff; /* バーの色 */
+    }
+    
+    /* タイトルのグロー効果 */
+    h1 {
+        color: #fff;
+        text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff;
+        text-align: center;
+    }
+    
+    /* 解説・成績カード */
     .info-card {
-        background-color: rgba(0, 0, 0, 0.03);
-        padding: 15px;
+        background: rgba(30, 30, 30, 0.9);
+        padding: 20px;
         border-radius: 10px;
-        border: 1px solid #eee;
-        color: inherit;
+        border: 1px solid #444;
+        margin-top: 15px;
     }
-    
-    /* ダークモード時の微調整 */
-    @media (prefers-color-scheme: dark) {
-        div.stButton > button {
-            background-color: #333 !important; /* ダークモード時はボタンを濃いグレーに */
-            color: white !important; /* 文字は白 */
-            border: 1px solid #555;
-        }
-        div.stButton > button:hover {
-            background-color: #444 !important;
-            color: #ff4b4b !important;
-        }
-        .info-card {
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid #444;
-        }
+
+    /* サイドバーのサイバー化 */
+    .css-1d391kg, [data-testid="stSidebar"] {
+        background-color: #1a1a1a;
+        border-right: 1px solid #333;
     }
     </style>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
 # --- 1. データの読み込み関数 ---
