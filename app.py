@@ -3,9 +3,9 @@ import pandas as pd
 import random
 
 # --- ページ設定 ---
-st.set_page_config(page_title="コンクリート試験対策 Pro", page_icon="🏗️", layout="centered")
+st.set_page_config(page_title="Concrete AI Pro", page_icon="🏗️", layout="centered")
 
-# --- 🎨 アーバン・サイバー・コンクリート CSS ---
+# --- 🎨 サイバー・コンクリート・リッチデザイン ---
 st.markdown("""
     <style>
     /* 1. コンクリート背景 */
@@ -21,46 +21,44 @@ st.markdown("""
         font-family: 'Roboto Mono', monospace;
     }
 
-    /* 2. 題名（ネオンエフェクト） */
-    .main-title {
-        font-size: 2.8rem;
-        font-weight: 800;
+    /* 2. 【最重要】超巨大ネオン題名 */
+    .hero-title {
+        font-size: 4rem; /* さらに大きく */
+        font-weight: 900;
         color: #fff;
         text-align: center;
-        text-shadow: 0 0 10px #00c3ff, 0 0 20px #00c3ff, 0 0 40px #00c3ff;
-        margin-bottom: 5px;
-        padding-top: 10px;
-        letter-spacing: 1px;
+        text-shadow: 0 0 20px #00c3ff, 0 0 30px #00c3ff, 0 0 60px #00c3ff;
+        margin-bottom: -10px;
+        padding-top: 40px;
+        line-height: 1.1;
+        letter-spacing: -2px; /* 少し詰めて迫力を出す */
     }
-    .sub-title {
-        font-size: 1.1rem;
+    .hero-subtitle {
+        font-size: 1.5rem;
         color: #00c3ff;
         text-align: center;
-        margin-bottom: 30px;
+        margin-bottom: 40px;
         text-transform: uppercase;
-        letter-spacing: 5px;
+        letter-spacing: 8px;
+        font-weight: bold;
+        opacity: 0.8;
     }
 
     /* 3. ネオン・問題カード */
     .q-card {
         padding: 25px;
         border-radius: 15px;
-        background: rgba(40, 40, 40, 0.8);
+        background: rgba(40, 40, 40, 0.85);
         border: 2px solid #00c3ff;
-        box-shadow: 0 0 15px rgba(0, 195, 255, 0.5), inset 0 0 10px rgba(0, 195, 255, 0.2);
+        box-shadow: 0 0 20px rgba(0, 195, 255, 0.4), inset 0 0 10px rgba(0, 195, 255, 0.1);
         margin-bottom: 25px;
         position: relative;
     }
-    .q-card::before, .q-card::after {
-        content: '';
-        position: absolute;
-        width: 10px; height: 10px;
-        background: #1a1a1a;
-        border-radius: 50%;
-        box-shadow: inset 0 2px 3px rgba(0,0,0,0.5);
+    .q-card h3 {
+        font-size: 1.8rem; /* 問題文も少し大きく */
+        color: #fff;
+        line-height: 1.4;
     }
-    .q-card::before { top: 10px; left: 10px; }
-    .q-card::after { top: 10px; right: 10px; }
 
     /* 4. サイバー・ボタン */
     div.stButton > button {
@@ -69,25 +67,19 @@ st.markdown("""
         background: rgba(0, 195, 255, 0.1) !important;
         color: #00c3ff !important;
         font-weight: bold;
-        text-transform: uppercase;
+        font-size: 1.1rem;
     }
     div.stButton > button:hover {
         background: rgba(0, 195, 255, 0.3) !important;
-        box-shadow: 0 0 10px rgba(0, 195, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 195, 255, 0.8);
     }
     
-    div.stButton > button[kind="primary"] {
-        border: 1px solid #ff9f00;
-        background: rgba(255, 159, 0, 0.1) !important;
-        color: #ff9f00 !important;
-    }
-
-    /* プログレスバー */
+    /* 進捗バー */
     .stProgress > div > div > div > div {
         background-color: #00c3ff;
     }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700;900&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
 # --- 1. データの読み込み ---
@@ -97,10 +89,7 @@ def load_data():
         df = pd.read_csv('quiz_data.csv', encoding='utf-8-sig')
         data = []
         for _, row in df.iterrows():
-            options = []
-            for i in range(1, 5):
-                opt = row.get(f'opt{i}')
-                if pd.notna(opt): options.append(str(opt))
+            options = [str(row[f'opt{i}']) for i in range(1, 5) if pd.notna(row.get(f'opt{i}'))]
             data.append({
                 "id": str(row.get('id', '不明')),
                 "type": str(row.get('type', '四肢択一')),
@@ -119,89 +108,76 @@ def load_data():
 all_quiz_data = load_data()
 
 # --- 2. セッション状態 ---
-if "count" not in st.session_state: st.session_state.count = 0
-if "correct" not in st.session_state: st.session_state.correct = 0
-if "show_explanation" not in st.session_state: st.session_state.show_explanation = False
-if "current_question" not in st.session_state: st.session_state.current_question = None
-if "last_result" not in st.session_state: st.session_state.last_result = None
+for key in ["count", "correct", "show_explanation", "current_question", "last_result"]:
+    if key not in st.session_state:
+        st.session_state[key] = 0 if key in ["count", "correct"] else None
 
-# --- 3. サイドバーの設定 ---
-st.sidebar.title("🛠️ 出題設定")
+# --- 3. 【追加】巨大題名の表示エリア ---
+st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
+st.markdown('<p class="hero-subtitle">試験対策 SYSTEM</p>', unsafe_allow_html=True)
+
+# --- 4. サイドバー設定 ---
+st.sidebar.title("⚙️ CONFIG")
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
 
 if base_data:
     categories = ["全カテゴリ"] + sorted(list(set([q['category'] for q in base_data])))
     years = ["全年度"] + sorted(list(set([q['year'] for q in base_data])), reverse=True)
-    selected_cat = st.sidebar.selectbox("カテゴリで絞り込む", categories)
-    selected_year = st.sidebar.selectbox("年度で絞り込む", years)
+    selected_cat = st.sidebar.selectbox("📂 カテゴリ", categories)
+    selected_year = st.sidebar.selectbox("📅 年度", years)
     
     filtered_data = base_data
-    if selected_cat != "全カテゴリ":
-        filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
-    if selected_year != "全年度":
-        filtered_data = [q for q in filtered_data if q['year'] == selected_year]
+    if selected_cat != "全カテゴリ": filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
+    if selected_year != "全年度": filtered_data = [q for q in filtered_data if q['year'] == selected_year]
 else:
     filtered_data = []
 
-target_total = st.sidebar.slider("出題数を設定", 5, 50, 10, 5)
+target_total = st.sidebar.slider("🎯 目標出題数", 5, 50, 10, 5)
 
-if st.sidebar.button("記録をリセットして最初から", use_container_width=True):
+if st.sidebar.button("🔄 SYSTEM RESET"):
     st.session_state.count = 0
     st.session_state.correct = 0
     st.session_state.current_question = None
-    st.session_state.show_explanation = False
-    st.session_state.last_result = None
     st.rerun()
 
-# --- 4. 進行状況の表示 ---
-# 🏗️ ここをオリジナルの題名に書き換えました！
-st.markdown('<p class="main-title">コンクリート主任技士</p>', unsafe_allow_html=True)
-st.markdown(f'<p class="sub-title">試験対策 {q_type}MODE</p>', unsafe_allow_html=True)
-
+# --- 5. メインロジック ---
 if not filtered_data:
     st.info("条件に合う問題がありません。")
 else:
-    progress_val = min(st.session_state.count / target_total, 1.0)
-    st.progress(progress_val)
-    st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
-    st.divider()
-
-    # --- 5. メイン画面の処理 ---
     if st.session_state.count >= target_total:
         st.balloons()
-        st.title("🏆 Result")
+        st.markdown("<div class='q-card' style='text-align: center; border-color: #ff9f00;'>", unsafe_allow_html=True)
+        st.title("🏆 COMPLETED")
         score_rate = int((st.session_state.correct / target_total) * 100)
         col1, col2 = st.columns(2)
         col1.metric("正答率", f"{score_rate}%")
         col2.metric("正解数", f"{st.session_state.correct} / {target_total}")
-        if st.button("もう一度挑戦する", type="primary", use_container_width=True):
+        if st.button("REBOOT"):
             st.session_state.count = 0
             st.session_state.correct = 0
             st.session_state.current_question = None
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
     else:
+        # 進捗
+        progress_val = min(st.session_state.count / target_total, 1.0)
+        st.progress(progress_val)
+        
         if st.session_state.current_question is None or st.session_state.current_question not in filtered_data:
             st.session_state.current_question = random.choice(filtered_data)
         
         q = st.session_state.current_question
         
-        # 問題表示カード（ピーコン装飾付き）
-        st.markdown(f"""
-            <div class="q-card">
-                <small style="color: #888;">ID: {q['id']} | {q['year']}年 | {q['category']}</small>
-                <h3 style="margin-top: 15px;">{q['question']}</h3>
-            </div>
-        """, unsafe_allow_html=True)
+        # 問題カード
+        st.markdown(f'<div class="q-card"><small>DATA: {q["id"]} | {q["year"]} | {q["category"]}</small><h3>{q["question"]}</h3></div>', unsafe_allow_html=True)
         
-        if st.session_state.last_result == "correct":
-            st.success("✨ 正解！")
-        elif st.session_state.last_result == "wrong":
-            st.error(f"❌ 不正解...（正解：{q['answer']}）")
+        if st.session_state.last_result == "correct": st.success("✨ CORRECT")
+        elif st.session_state.last_result == "wrong": st.error(f"❌ WRONG (正解: {q['answer']})")
 
         for option in q['options']:
-            if st.button(option, use_container_width=True, disabled=st.session_state.show_explanation, key=option):
-                if str(option).strip() == str(q["answer"]).strip():
+            if st.button(option, use_container_width=True, key=option):
+                if option.strip() == q["answer"].strip():
                     st.session_state.correct += 1
                     st.session_state.last_result = "correct"
                 else:
@@ -210,9 +186,9 @@ else:
                 st.rerun()
                 
         if st.session_state.show_explanation:
-            with st.expander("📝 解説をチェック", expanded=True):
+            with st.expander("📖 ANALYSIS"):
                 st.write(q["explanation"])
-                if st.button("次の問題へ ➡️", type="primary", use_container_width=True):
+                if st.button("NEXT DATA ➡️", type="primary"):
                     st.session_state.count += 1
                     st.session_state.current_question = random.choice(filtered_data)
                     st.session_state.show_explanation = False
