@@ -14,24 +14,36 @@ hashed_passwords = [
     'concrete2026', 
     'guest456'
 ] 
+# 最新仕様：認証情報を辞書形式にまとめます
+credentials = {
+    "usernames": {
+        usernames[0]: {"name": names[0], "password": hashed_passwords[0]},
+        usernames[1]: {"name": names[1], "password": hashed_passwords[1]}
+    }
+}
 
+# インスタンス作成
 authenticator = stauth.Authenticate(
-    names, usernames, hashed_passwords,
-    "concrete_quiz_cookie", "auth_key", cookie_expiry_days=30
+    credentials,
+    "concrete_quiz_cookie", 
+    "auth_key", 
+    cookie_expiry_days=30
 )
 
 # ログイン画面を出す
-name, authentication_status, username = authenticator.login("ログイン", "main")
+authenticator.login("ログイン", "main")
 
-if authentication_status == False:
+# 認証状況の確認
+if st.session_state["authentication_status"] == False:
     st.error("ユーザー名またはパスワードが正しくありません")
-elif authentication_status == None:
+elif st.session_state["authentication_status"] == None:
     st.warning("ユーザー名とパスワードを入力してください")
-elif authentication_status:
-    # 🔓 ここから下はすべてログイン成功後のみ実行されるため、段落を右に下げます
+elif st.session_state["authentication_status"]:
+    # 🔓 ログイン成功後のエリア
     
     authenticator.logout("ログアウト", "sidebar")
-
+    name = st.session_state["name"]
+    
     # --- 🎨 サイバー・コンクリート・デザイン ---
     st.markdown("""
         <style>
