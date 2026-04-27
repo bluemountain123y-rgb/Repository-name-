@@ -4,42 +4,69 @@ import random
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート試験対策アプリ", page_icon="🏗️", layout="centered")
-# --- カスタムデザイン (CSS) ---
+# --- カスタムデザイン (CSS) - ライト/ダーク両対応 ---
 st.markdown("""
     <style>
-    /* メイン背景とカードのデザイン */
+    /* 全体の文字色を自動調整 */
     .stApp {
-        background-color: #f8f9fa;
+        color: inherit;
     }
-    .main-card {
-        background-color: white;
+    
+    /* 問題表示カード - 枠線をくっきりさせる */
+    .q-card {
         padding: 20px;
         border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: 2px solid #ff4b4b; /* 赤い枠線 */
+        background-color: rgba(255, 75, 75, 0.05); /* ほんのり赤い背景 */
         margin-bottom: 20px;
+        color: inherit; /* 文字色は全体のテーマに合わせる */
     }
-    /* ボタンのカスタマイズ */
+    .q-card small {
+        color: #888; /* IDなどは少し薄く */
+    }
+    
+    /* ボタンのカスタマイズ - 読みやすさ最優先 */
     div.stButton > button {
         border-radius: 10px;
         border: 1px solid #e0e0e0;
-        background-color: white;
+        background-color: white !important; /* ボタン背景は常に白 */
+        color: #333 !important; /* ボタン文字は常に濃いグレー */
         transition: all 0.3s ease;
         font-size: 16px;
         padding: 10px 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
     div.stButton > button:hover {
         border-color: #ff4b4b;
-        color: #ff4b4b;
-        background-color: #fff5f5;
+        color: #ff4b4b !important;
+        background-color: #fff5f5 !important;
         transform: translateY(-2px);
     }
-    /* 正解・不正解の強調 */
-    .result-text {
-        font-weight: bold;
-        font-size: 1.2rem;
-        text-align: center;
-        padding: 10px;
+    
+    /* 解説・リザルトカード */
+    .info-card {
+        background-color: rgba(0, 0, 0, 0.03);
+        padding: 15px;
         border-radius: 10px;
+        border: 1px solid #eee;
+        color: inherit;
+    }
+    
+    /* ダークモード時の微調整 */
+    @media (prefers-color-scheme: dark) {
+        div.stButton > button {
+            background-color: #333 !important; /* ダークモード時はボタンを濃いグレーに */
+            color: white !important; /* 文字は白 */
+            border: 1px solid #555;
+        }
+        div.stButton > button:hover {
+            background-color: #444 !important;
+            color: #ff4b4b !important;
+        }
+        .info-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid #444;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
