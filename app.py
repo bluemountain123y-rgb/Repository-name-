@@ -45,8 +45,6 @@ if "last_result" not in st.session_state: st.session_state.last_result = None
 # --- 3. サイドバーの設定 ---
 st.sidebar.title("🛠️ 出題設定")
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
-
-# スライダーで出題数を設定 (5問〜50問、5問刻み、初期値10問)
 target_total = st.sidebar.slider("出題数を設定", min_value=5, max_value=50, value=10, step=5)
 
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
@@ -66,21 +64,38 @@ st.title(f"🏗️ {q_type}モード")
 progress_val = min(st.session_state.count / target_total, 1.0)
 st.progress(progress_val)
 st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
-st.write(f"✅ **正解数: {st.session_state.correct}問**")
 st.divider()
 
 # --- 5. メイン画面の処理 ---
 if not base_data:
     st.info("データが見つかりません。")
 elif st.session_state.count >= target_total:
+    # 🏆 終了画面：正答率をデカデカと表示！
     st.balloons()
-    st.success(f"🎉 設定した {target_total} 問が終了しました！お疲れ様です！")
-    if st.button("もう一度挑戦する", type="primary"):
+    st.title("🏆 Result")
+    
+    # 正答率の計算
+    score_rate = int((st.session_state.correct / target_total) * 100)
+    
+    # メトリック（デカ文字）で表示
+    col1, col2 = st.columns(2)
+    col1.metric("正答率", f"{score_rate}%")
+    col2.metric("正解数", f"{st.session_state.correct} / {target_total}")
+    
+    if score_rate == 100:
+        st.success("🎯 完璧です！全問正解！")
+    elif score_rate >= 70:
+        st.success("✨ 素晴らしい！合格圏内です！")
+    else:
+        st.warning("💪 伸びしろがあります！もう一度挑戦しましょう。")
+
+    if st.button("もう一度挑戦する", type="primary", use_container_width=True):
         st.session_state.count = 0
         st.session_state.correct = 0
         st.session_state.current_question = None
         st.rerun()
 else:
+    # 問題出題中の画面
     if st.session_state.current_question is None:
         st.session_state.current_question = random.choice(base_data)
     
@@ -113,4 +128,3 @@ else:
                 st.session_state.show_explanation = False
                 st.session_state.last_result = None
                 st.rerun()
-                
