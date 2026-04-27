@@ -46,6 +46,10 @@ if "last_result" not in st.session_state: st.session_state.last_result = None
 st.sidebar.title("🛠️ 出題設定")
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
+# ここを追加：出題数の設定
+num_options = [5, 10, 20, "全問"]
+selected_num = st.sidebar.selectbox("出題数を選択", num_options, index=1) # 初期値は10問
+
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
 
 if st.sidebar.button("記録をリセットして最初から", use_container_width=True):
@@ -56,19 +60,33 @@ if st.sidebar.button("記録をリセットして最初から", use_container_wi
     st.session_state.last_result = None
     st.rerun()
 
-# --- 4. 進行状況の表示 (ここを追加！) ---
+# --- 4. 進行状況の表示 ---
 st.title(f"🏗️ {q_type}モード")
 
-# 進捗バーと成績
-total_questions = 10 # 目標10問とする
-progress = min(st.session_state.count / total_questions, 1.0)
-st.progress(progress)
-st.write(f"📊 **現在の成績: {st.session_state.count}問中 {st.session_state.correct}問正解**")
+# 出題数の決定
+if selected_num == "全問":
+    target_total = len(base_data) if base_data else 1
+else:
+    target_total = int(selected_num)
+
+# 進捗バーの計算
+progress_val = min(st.session_state.count / target_total, 1.0)
+st.progress(progress_val)
+st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
+st.write(f"✅ **正解数: {st.session_state.correct}問**")
 st.divider()
 
 # --- 5. メイン画面の処理 ---
 if not base_data:
     st.info("データが見つかりません。")
+elif st.session_state.count >= target_total:
+    st.balloons()
+    st.success(f"🎉 設定した {target_total} 問が終了しました！お疲れ様です！")
+    if st.button("もう一度挑戦する", type="primary"):
+        st.session_state.count = 0
+        st.session_state.correct = 0
+        st.session_state.current_question = None
+        st.rerun()
 else:
     if st.session_state.current_question is None:
         st.session_state.current_question = random.choice(base_data)
