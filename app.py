@@ -31,7 +31,7 @@ authenticator = stauth.Authenticate(
 )
 
 # ログイン画面を出す
-authenticator.login("ログイン", "main")
+authenticator.login(location='main')
 
 # 認証状況の確認
 if st.session_state["authentication_status"] == False:
@@ -41,9 +41,9 @@ elif st.session_state["authentication_status"] == None:
 elif st.session_state["authentication_status"]:
     # 🔓 ログイン成功後のエリア
     
-    authenticator.logout("ログアウト", "sidebar")
+    authenticator.logout(button_name="ログアウト", location="sidebar")
     name = st.session_state["name"]
-    
+
     # --- 🎨 サイバー・コンクリート・デザイン ---
     st.markdown("""
         <style>
