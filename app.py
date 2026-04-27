@@ -22,7 +22,7 @@ st.markdown("""
 
     /* 2. 【最重要】題名を巨大化 */
     .hero-title {
-        font-size: 4.5rem !important; /* 前よりさらに大きくしました */
+        font-size: 3.0rem !important; /* 前よりさらに大きくしました */
         font-weight: 900;
         color: #fff;
         text-align: center;
