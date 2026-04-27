@@ -42,13 +42,12 @@ if "show_explanation" not in st.session_state: st.session_state.show_explanation
 if "current_question" not in st.session_state: st.session_state.current_question = None
 if "last_result" not in st.session_state: st.session_state.last_result = None
 
-# --- 3. サイドバー ---
+# --- 3. サイドバーの設定 ---
 st.sidebar.title("🛠️ 出題設定")
 q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
-# ここを追加：出題数の設定
-num_options = [5, 10, 20, "全問"]
-selected_num = st.sidebar.selectbox("出題数を選択", num_options, index=1) # 初期値は10問
+# スライダーで出題数を設定 (5問〜50問、5問刻み、初期値10問)
+target_total = st.sidebar.slider("出題数を設定", min_value=5, max_value=50, value=10, step=5)
 
 base_data = [q for q in all_quiz_data if q['type'] == q_type]
 
@@ -62,12 +61,6 @@ if st.sidebar.button("記録をリセットして最初から", use_container_wi
 
 # --- 4. 進行状況の表示 ---
 st.title(f"🏗️ {q_type}モード")
-
-# 出題数の決定
-if selected_num == "全問":
-    target_total = len(base_data) if base_data else 1
-else:
-    target_total = int(selected_num)
 
 # 進捗バーの計算
 progress_val = min(st.session_state.count / target_total, 1.0)
