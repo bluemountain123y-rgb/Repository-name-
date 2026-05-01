@@ -9,7 +9,9 @@ import quiz_ui as ui  # UIパーツをインポート
 # ... (認証完了後の処理から) ...
 
     # データの読み込み
-    all_quiz_data = load_data()
+ if st.session_state["authentication_status"]:
+    # ↓ この行の先頭のスペースを上の行と合わせる
+    all_quiz_data = load_data() 
     apply_custom_css()
 
     # --- 3. サイドバー (既存のロジック) ---
