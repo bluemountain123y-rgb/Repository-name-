@@ -32,6 +32,21 @@ if st.session_state["authentication_status"]:
     st.sidebar.markdown("---")
     q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
+# --- サイドバーの続き ---
+    target_total = st.sidebar.slider("🎯 目標出題数", 5, 50, 10, 5)
+
+    # ここから追記：リセットボタンを常にサイドバーの下部に表示
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔄 記録をリセット", use_container_width=True):
+        st.session_state.count = 0
+        st.session_state.correct = 0
+        st.session_state.current_question = None
+        st.session_state.show_explanation = False
+        st.session_state.last_result = None
+        # キャッシュもクリアしたい場合は以下を有効に（任意）
+        # st.cache_data.clear() 
+        st.rerun()
+        
     # データ抽出
     if mode == "通常学習":
         base_data = [q for q in all_quiz_data if q['type'] == q_type]
