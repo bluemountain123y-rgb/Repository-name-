@@ -47,19 +47,33 @@ elif st.session_state["authentication_status"]:
     st.sidebar.markdown("### ⚙️ モード選択")
     mode = st.sidebar.radio("学習モード", ["通常学習", "見直しリスト"])
     
+    # 出題形式の選択（どちらのモードでも選択可能にする）
+    st.sidebar.markdown("---")
+    q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
+
     if mode == "通常学習":
-        q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
         base_data = [q for q in all_quiz_data if q['type'] == q_type]
     else:
-        # 見直しフラグ(review)が 1 の問題だけを抽出
-        base_data = [q for q in all_quiz_data if q.get('review') == 1]
-        st.sidebar.info(f"🚩 見直し対象: {len(base_data)} 問")
+        # 見直しフラグがあり、かつ選択中の出題形式に一致するもの
+        base_data = [q for q in all_quiz_data if q.get('review') == 1 and q['type'] == q_type]
+        st.sidebar.success(f"🚩 見直し対象({q_type}): {len(base_data)} 問")
 
-    # フィルタリング（カテゴリ・年度）
+# フィルタリング（カテゴリ・年度）
     if base_data:
-        categories = ["全カテゴリ"] + sorted(list(set([q['category'] for q in base_data])))
+        # カテゴリごとの問題数を集計して表示用リストを作成
+        cat_counts = {}
+        for q in base_data:
+            cat = q['category']
+            cat_counts[cat] = cat_counts.get(cat, 0) + 1
+        
+        # セレクトボックスの表示を「カテゴリ名 (〇問)」にする
+        category_options = ["全カテゴリ"] + [f"{cat} ({count}問)" for cat, count in sorted(cat_counts.items())]
+        selected_cat_display = st.sidebar.selectbox("📂 カテゴリ選択", category_options)
+        
+        # 実際のフィルタリング用に「(〇問)」を削ってカテゴリ名だけ取り出す
+        selected_cat = selected_cat_display.split(" (")[0]
+        
         years = ["全年度"] + sorted(list(set([q['year'] for q in base_data])), reverse=True)
-        selected_cat = st.sidebar.selectbox("📂 カテゴリ選択", categories)
         selected_year = st.sidebar.selectbox("📅 年度選択", years)
         
         filtered_data = base_data
