@@ -1,6 +1,8 @@
 import streamlit as st
 import random
 import streamlit_authenticator as stauth
+import plotly.express as px  # グラフ用に新規追加
+import pandas as pd         # グラフ用に新規追加
 from database import load_data
 from styles import apply_custom_css
 import quiz_ui as ui # UIパーツ担当
@@ -83,15 +85,29 @@ if st.session_state["authentication_status"]:
             # 【見直しモード：グラフ表示と問題選択】
             st.subheader("📊 カテゴリ別見直し状況")
             
-            # グラフ用データの作成（現在の見直しリスト全体の統計）
             if base_data:
                 chart_dict = {}
                 for q in base_data:
                     cat = q['category']
                     chart_dict[cat] = chart_dict.get(cat, 0) + 1
                 
-                # 棒グラフを表示
-                st.bar_chart(chart_dict)
+                # --- Plotlyによる整数軸グラフの作成 ---
+                df_chart = pd.DataFrame(list(chart_dict.items()), columns=['カテゴリ', '問題数'])
+                fig = px.bar(df_chart, x='カテゴリ', y='問題数', color_discrete_sequence=['#00c3ff'])
+                
+                fig.update_yaxes(
+                    dtick=1,           # 1刻みに固定（0.5を消す）
+                    tickformat='d'     # 整数で表示
+                )
+                
+                fig.update_layout(
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color="white")
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
             
             st.markdown("---")
             st.subheader(f"📂 {selected_cat} の個別見直し")
