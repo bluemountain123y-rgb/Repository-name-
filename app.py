@@ -1,36 +1,20 @@
 import streamlit as st
-import pandas as pd
 import random
 import streamlit_authenticator as stauth
+from database import load_data, save_review_status  # save_review_statusを追加
+from styles import apply_custom_css
 
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート主任技士 試験対策", page_icon="🏗️", layout="centered")
 
-# --- 1. ユーザー認証の設定 ---
-names = ["管理者", "テストユーザー"]
-usernames = ["admin", "user01"]
-# ★ここにご自身のハッシュ($2b$12$...)を貼り付けてください
-hashed_passwords = [
-    'concrete2026', 
-    'guest456'
-] 
-# 最新仕様：認証情報を辞書形式にまとめます
+# --- 1. ユーザー認証 ---
 credentials = {
     "usernames": {
-        usernames[0]: {"name": names[0], "password": hashed_passwords[0]},
-        usernames[1]: {"name": names[1], "password": hashed_passwords[1]}
+        "admin": {"name": "管理者", "password": "concrete2026"},
+        "user01": {"name": "テストユーザー", "password": "guest456"}
     }
 }
-
-# インスタンス作成
-authenticator = stauth.Authenticate(
-    credentials,
-    "concrete_quiz_cookie", 
-    "auth_key", 
-    cookie_expiry_days=30
-)
-
-# ログイン画面を出す
+authenticator = stauth.Authenticate(credentials, "concrete_quiz_cookie", "auth_key", cookie_expiry_days=30)
 authenticator.login(location='main')
 
 # 認証状況の確認
@@ -40,111 +24,38 @@ elif st.session_state["authentication_status"] == None:
     st.warning("ユーザー名とパスワードを入力してください")
 elif st.session_state["authentication_status"]:
     # 🔓 ログイン成功後のエリア
-    
     authenticator.logout(button_name="ログアウト", location="sidebar")
     name = st.session_state["name"]
 
-    # --- 🎨 サイバー・コンクリート・デザイン ---
-    st.markdown("""
-        <style>
-        .stApp {
-            background-color: #2b2b2b;
-            background-image: 
-                radial-gradient(#3a3a3a 15%, transparent 16%),
-                radial-gradient(#3a3a3a 15%, transparent 16%),
-                linear-gradient(#2b2b2b 0%, #333333 100%);
-            background-size: 100px 100px, 100px 100px, 100% 100%;
-            background-position: 0 0, 50px 50px, 0 0;
-            color: #e0e0e0;
-        }
-        .hero-title {
-            font-size: 3.5rem !important; 
-            font-weight: 900;
-            color: #fff;
-            text-align: center;
-            text-shadow: 0 0 20px #00c3ff, 0 0 40px #00c3ff;
-            margin-top: 20px;
-            margin-bottom: 0px;
-            line-height: 1.1;
-        }
-        .hero-subtitle {
-            font-size: 1.2rem;
-            color: #00c3ff;
-            text-align: center;
-            margin-bottom: 40px;
-            font-weight: bold;
-            letter-spacing: 5px;
-        }
-        .q-card {
-            padding: 25px;
-            border-radius: 15px;
-            background: rgba(40, 40, 40, 0.85);
-            border: 2px solid #00c3ff;
-            box-shadow: 0 0 20px rgba(0, 195, 255, 0.4);
-            margin-bottom: 25px;
-        }
-        .q-card h3 {
-            font-size: 1.3rem !important;
-            color: #fff;
-            line-height: 1.6;
-            font-weight: 500;
-        }
-        div.stButton > button {
-            border-radius: 8px;
-            border: 1px solid #00c3ff;
-            background: rgba(0, 195, 255, 0.1) !important;
-            color: #00c3ff !important;
-            font-weight: bold;
-        }
-        div.stButton > button:hover {
-            background: rgba(0, 195, 255, 0.3) !important;
-            box-shadow: 0 0 15px rgba(0, 195, 255, 0.8);
-        }
-        .stProgress > div > div > div > div {
-            background-color: #00c3ff;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+    # デザイン適用
+    apply_custom_css()
+    
+    # データの読み込み
+    all_quiz_data = load_data()
 
+    # ヘッダー表示
     st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
     st.markdown('<p class="hero-subtitle">試験対策システム</p>', unsafe_allow_html=True)
     st.write(f"ようこそ、{name} さん。学習を始めましょう。")
 
-    # --- 1. データの読み込み ---
-    @st.cache_data
-    def load_data():
-        try:
-            df = pd.read_csv('quiz_data.csv', encoding='utf-8-sig')
-            data = []
-            for _, row in df.iterrows():
-                options = [str(row[f'opt{i}']) for i in range(1, 5) if pd.notna(row.get(f'opt{i}'))]
-                data.append({
-                    "id": str(row.get('id', '不明')),
-                    "type": str(row.get('type', '四肢択一')),
-                    "year": str(row.get('year', '不明')),
-                    "category": str(row.get('category', '未分類')),
-                    "question": str(row['question']),
-                    "answer": str(row['answer']),
-                    "explanation": str(row.get('explanation', '解説なし')),
-                    "options": options
-                })
-            return data
-        except Exception as e:
-            st.error(f"CSVエラー: {e}")
-            return []
-
-    all_quiz_data = load_data()
-
-    # --- 2. セッション状態 ---
+    # --- 2. セッション状態の初期化 ---
     for key in ["count", "correct", "show_explanation", "current_question", "last_result"]:
         if key not in st.session_state:
             st.session_state[key] = 0 if key in ["count", "correct"] else None
 
-    # --- 4. サイドバー設定 ---
-    st.sidebar.markdown("### ⚙️ 出題設定")
-    q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
-    base_data = [q for q in all_quiz_data if q['type'] == q_type]
+    # --- 3. サイドバー設定（見直しモード切り替え） ---
+    st.sidebar.markdown("### ⚙️ モード選択")
+    mode = st.sidebar.radio("学習モード", ["通常学習", "見直しリスト"])
+    
+    if mode == "通常学習":
+        q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
+        base_data = [q for q in all_quiz_data if q['type'] == q_type]
+    else:
+        # 見直しフラグ(review)が 1 の問題だけを抽出
+        base_data = [q for q in all_quiz_data if q.get('review') == 1]
+        st.sidebar.info(f"🚩 見直し対象: {len(base_data)} 問")
 
+    # フィルタリング（カテゴリ・年度）
     if base_data:
         categories = ["全カテゴリ"] + sorted(list(set([q['category'] for q in base_data])))
         years = ["全年度"] + sorted(list(set([q['year'] for q in base_data])), reverse=True)
@@ -152,8 +63,10 @@ elif st.session_state["authentication_status"]:
         selected_year = st.sidebar.selectbox("📅 年度選択", years)
         
         filtered_data = base_data
-        if selected_cat != "全カテゴリ": filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
-        if selected_year != "全年度": filtered_data = [q for q in filtered_data if q['year'] == selected_year]
+        if selected_cat != "全カテゴリ": 
+            filtered_data = [q for q in filtered_data if q['category'] == selected_cat]
+        if selected_year != "全年度": 
+            filtered_data = [q for q in filtered_data if q['year'] == selected_year]
     else:
         filtered_data = []
 
@@ -167,10 +80,14 @@ elif st.session_state["authentication_status"]:
         st.session_state.last_result = None
         st.rerun()
 
-    # --- 5. メインロジック ---
+    # --- 4. メインロジック ---
     if not filtered_data:
-        st.info("条件に合う問題がありません。設定を確認してください。")
+        if mode == "見直しリスト":
+            st.info("見直しリストに問題がありません。正解に自信がない問題にフラグを立てましょう！")
+        else:
+            st.info("条件に合う問題がありません。設定を確認してください。")
     else:
+        # 全問終了時
         if st.session_state.count >= target_total:
             st.balloons()
             st.markdown("<div class='q-card' style='text-align: center; border-color: #ff9f00;'>", unsafe_allow_html=True)
@@ -185,25 +102,34 @@ elif st.session_state["authentication_status"]:
                 st.session_state.current_question = None
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
+        
         else:
-            # 進捗
+            # 進捗表示
             progress_val = min(st.session_state.count / target_total, 1.0)
             st.progress(progress_val)
             st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
             
+            # 問題選定
             if st.session_state.current_question is None or st.session_state.current_question not in filtered_data:
                 st.session_state.current_question = random.choice(filtered_data)
             
             q = st.session_state.current_question
             
-            # 問題カード
-            st.markdown(f'<div class="q-card"><small style="color: #888;">ID: {q["id"]} | {q["year"]} | {q["category"]}</small><h3>{q["question"]}</h3></div>', unsafe_allow_html=True)
+            # 問題表示
+            st.markdown(f'''
+                <div class="q-card">
+                    <small style="color: #888;">ID: {q["id"]} | {q["year"]} | {q["category"]}</small>
+                    <h3>{q["question"]}</h3>
+                </div>
+            ''', unsafe_allow_html=True)
             
+            # 正誤判定の表示
             if st.session_state.last_result == "correct": st.success("✨ 正解です！")
             elif st.session_state.last_result == "wrong": st.error(f"❌ 不正解... (正解: {q['answer']})")
 
+            # 回答ボタン
             for option in q['options']:
-                if st.button(option, use_container_width=True, key=option):
+                if st.button(option, use_container_width=True, key=f"btn_{option}"):
                     if option.strip() == q["answer"].strip():
                         st.session_state.correct += 1
                         st.session_state.last_result = "correct"
@@ -211,10 +137,28 @@ elif st.session_state["authentication_status"]:
                         st.session_state.last_result = "wrong"
                     st.session_state.show_explanation = True
                     st.rerun()
-                    
+            
+            # 解説と見直し登録
             if st.session_state.show_explanation:
                 with st.expander("📖 解説をチェック", expanded=True):
                     st.write(q["explanation"])
+                    
+                    # 見直しボタン（モードによって役割を変える）
+                    is_review = q.get('review') == 1
+                    if mode == "通常学習":
+                        btn_label = "✅ 見直しリストから外す" if is_review else "🚩 見直しリストに追加"
+                        if st.button(btn_label, use_container_width=True):
+                            save_review_status(q['id'], not is_review)
+                            st.rerun()
+                    else:
+                        if st.button("✨ 克服した！（リストから削除）", use_container_width=True):
+                            save_review_status(q['id'], False)
+                            st.session_state.count += 1
+                            st.session_state.current_question = None
+                            st.session_state.show_explanation = False
+                            st.session_state.last_result = None
+                            st.rerun()
+
                     if st.button("次の問題へ ➡️", type="primary", use_container_width=True):
                         st.session_state.count += 1
                         st.session_state.current_question = random.choice(filtered_data)
