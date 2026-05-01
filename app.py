@@ -10,6 +10,44 @@ import quiz_ui as ui # UIパーツ担当
 # --- ページ設定 ---
 st.set_page_config(page_title="コンクリート主任技士 試験対策", page_icon="🏗️", layout="centered")
 
+# --- グラフ描画関数（全カテゴリ表示対応） ---
+def render_review_chart(base_data):
+    # 全カテゴリの定義（表示順を固定）
+    all_categories = [
+        "①コンクリート材料", "②コンクリート性質", "③環境・経年劣化", 
+        "④配(調)合設計", "⑤製造・品質管理", "⑥施工", 
+        "⑦特殊コンクリート", "⑧構造・設計・ひび割れ"
+    ]
+    
+    # 全て0で初期化
+    chart_dict = {cat: 0 for cat in all_categories}
+    
+    # データの集計
+    if base_data:
+        for q in base_data:
+            cat = q.get('category')
+            if cat in chart_dict:
+                chart_dict[cat] += 1
+    
+    # DataFrame作成
+    df_chart = pd.DataFrame({
+        'カテゴリ': all_categories,
+        '問題数': [chart_dict[cat] for cat in all_categories]
+    })
+    
+    # Plotlyによる描画
+    fig = px.bar(df_chart, x='カテゴリ', y='問題数', color_discrete_sequence=['#00c3ff'])
+    
+    fig.update_yaxes(dtick=1, tickformat='d')
+    fig.update_layout(
+        margin=dict(l=20, r=20, t=20, b=20),
+        xaxis_tickangle=-45, # カテゴリ名が長いので斜めにする
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(color="white")
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
 # --- 1. ユーザー認証 ---
 credentials = {
     "usernames": {
@@ -42,11 +80,11 @@ if st.session_state["authentication_status"]:
     st.sidebar.markdown("---")
     q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
-    # データ抽出の基礎（モードと形式でフィルタ）
+    # データ抽出（モードと形式でフィルタ）
     if mode == "通常学習":
         base_data = [q for q in all_quiz_data if q['type'] == q_type]
     else:
-        # 見直しリストモード：reviewフラグが1かつ形式が一致するもの
+        # 見直しリストモード
         base_data = [q for q in all_quiz_data if q.get('review') == 1 and q['type'] == q_type]
 
     # カテゴリ・年度フィルタ
@@ -62,7 +100,7 @@ if st.session_state["authentication_status"]:
     else:
         filtered_data = []
 
-    # 共通設定（目標数とリセット）
+    # 共通設定
     st.sidebar.markdown("---")
     target_total = st.sidebar.slider("🎯 目標出題数", 5, 50, 10, 5)
     
@@ -78,36 +116,14 @@ if st.session_state["authentication_status"]:
     if not filtered_data:
         if mode == "見直しリスト":
             st.info(f"現在、{q_type} の見直しリストは空です。")
+            render_review_chart([]) # 空でもグラフ枠を表示
         else:
             st.info("条件に合う問題がありません。設定を確認してください。")
     else:
         if mode == "見直しリスト":
-            # 【見直しモード：グラフ表示と問題選択】
+            # 【見直しモード】
             st.subheader("📊 カテゴリ別見直し状況")
-            
-            if base_data:
-                chart_dict = {}
-                for q in base_data:
-                    cat = q['category']
-                    chart_dict[cat] = chart_dict.get(cat, 0) + 1
-                
-                # --- Plotlyによる整数軸グラフの作成 ---
-                df_chart = pd.DataFrame(list(chart_dict.items()), columns=['カテゴリ', '問題数'])
-                fig = px.bar(df_chart, x='カテゴリ', y='問題数', color_discrete_sequence=['#00c3ff'])
-                
-                fig.update_yaxes(
-                    dtick=1,           # 1刻みに固定（0.5を消す）
-                    tickformat='d'     # 整数で表示
-                )
-                
-                fig.update_layout(
-                    margin=dict(l=20, r=20, t=20, b=20),
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color="white")
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
+            render_review_chart(base_data)
             
             st.markdown("---")
             st.subheader(f"📂 {selected_cat} の個別見直し")
@@ -127,7 +143,7 @@ if st.session_state["authentication_status"]:
                 ui.show_explanation_and_nav(q, mode)
         
         else:
-            # 【通常学習モード：進行バー付き】
+            # 【通常学習モード】
             if st.session_state.count >= target_total:
                 st.balloons()
                 st.success("🏆 目標達成！お疲れ様でした。")
@@ -138,7 +154,6 @@ if st.session_state["authentication_status"]:
                     st.session_state.current_question = None
                     st.rerun()
             else:
-                # 進捗バーと進行状況の表示
                 progress_val = min(st.session_state.count / target_total, 1.0)
                 st.progress(progress_val)
                 st.write(f"📊 **進行状況: {st.session_state.count} / {target_total} 問完了**")
