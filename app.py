@@ -44,6 +44,7 @@ if st.session_state["authentication_status"]:
     if mode == "通常学習":
         base_data = [q for q in all_quiz_data if q['type'] == q_type]
     else:
+        # 見直しリストモード：reviewフラグが1かつ形式が一致するもの
         base_data = [q for q in all_quiz_data if q.get('review') == 1 and q['type'] == q_type]
 
     # カテゴリ・年度フィルタ
@@ -79,8 +80,22 @@ if st.session_state["authentication_status"]:
             st.info("条件に合う問題がありません。設定を確認してください。")
     else:
         if mode == "見直しリスト":
-            # 【見直しモード：問題選択型】
-            st.subheader(f"📂 {selected_cat} の見直し問題")
+            # 【見直しモード：グラフ表示と問題選択】
+            st.subheader("📊 カテゴリ別見直し状況")
+            
+            # グラフ用データの作成（現在の見直しリスト全体の統計）
+            if base_data:
+                chart_dict = {}
+                for q in base_data:
+                    cat = q['category']
+                    chart_dict[cat] = chart_dict.get(cat, 0) + 1
+                
+                # 棒グラフを表示
+                st.bar_chart(chart_dict)
+            
+            st.markdown("---")
+            st.subheader(f"📂 {selected_cat} の個別見直し")
+            
             q_dict = {f"[{q['id']}] {q['question'][:30]}...": q for q in filtered_data}
             selected_key = st.selectbox("解きたい問題を選択", ["-- 選択してください --"] + list(q_dict.keys()))
             
