@@ -1,6 +1,6 @@
 import streamlit as st
 import random
-from database import load_data  # 存在する関数のみをインポート
+from database import load_data
 from styles import apply_custom_css
 import quiz_ui as ui
 from auth_utils import get_authenticator
@@ -17,7 +17,9 @@ if st.session_state["authentication_status"]:
     # 🔓 ログイン成功時の処理
     authenticator.logout(button_name="ログアウト", location="sidebar")
     apply_custom_css()
-    all_quiz_data = load_data()
+    
+    # 💡 ここを修正：ログイン中のユーザー名を渡す
+    all_quiz_data = load_data(st.session_state["username"])
 
     # ヘッダー表示
     st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
@@ -70,14 +72,13 @@ if st.session_state["authentication_status"]:
     if not filtered_data:
         if mode == "見直しリスト":
             st.info(f"現在、{q_type} の見直しリストは空です。")
-            render_review_chart([])  # 空の状態でもグラフ枠（0問表示）を出す
+            render_review_chart([])
         else:
             st.info("条件に合う問題がありません。設定を確認してください。")
     else:
         if mode == "見直しリスト":
-            # 【見直しモード：グラフと個別選択】
             st.subheader("📊 カテゴリ別見直し状況")
-            render_review_chart(base_data)  # charts.pyの関数を使用
+            render_review_chart(base_data)
             
             st.markdown("---")
             st.subheader(f"📂 {selected_cat} の個別見直し")
@@ -97,7 +98,6 @@ if st.session_state["authentication_status"]:
                 ui.show_explanation_and_nav(q, mode)
         
         else:
-            # 【通常学習モード：進行バー付き】
             if st.session_state.count >= target_total:
                 st.balloons()
                 st.success("🏆 目標達成！お疲れ様でした。")
@@ -120,6 +120,5 @@ if st.session_state["authentication_status"]:
                 ui.handle_answer(q, "std")
                 ui.show_explanation_and_nav(q, mode, filtered_data)
 
-# --- 認証エラー時の表示 ---
 elif st.session_state["authentication_status"] is False:
     st.error("ユーザー名またはパスワードが正しくありません")
