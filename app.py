@@ -18,8 +18,9 @@ if st.session_state["authentication_status"]:
     authenticator.logout(button_name="ログアウト", location="sidebar")
     apply_custom_css()
     
-    # 💡 ここを修正：ログイン中のユーザー名を渡す
-    all_quiz_data = load_data(st.session_state["username"])
+    # 💡 ユーザー名を確実に取得してデータを読み込む（重複呼び出しを削除）
+    current_username = st.session_state.get("username")
+    all_quiz_data = load_data(current_username)
 
     # ヘッダー表示
     st.markdown('<p class="hero-title">コンクリート主任技士</p>', unsafe_allow_html=True)
@@ -36,14 +37,17 @@ if st.session_state["authentication_status"]:
     st.sidebar.markdown("---")
     q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
-    # データ抽出の基礎（モードと形式でフィルタ）
-    if mode == "通常学習":
-        base_data = [q for q in all_quiz_data if q['type'] == q_type]
-    else:
-        # 見直しリストモード：reviewフラグが1かつ形式が一致するもの
-        base_data = [q for q in all_quiz_data if q.get('review') == 1 and q['type'] == q_type]
+    # 💡 フィルタリングの肝：まず「出題形式」で絞り込む
+    type_filtered_data = [q for q in all_quiz_data if q['type'] == q_type]
 
-    # カテゴリ・フィルタ処理
+    # モードに応じてベースとなるデータを決定
+    if mode == "通常学習":
+        base_data = type_filtered_data
+    else:
+        # 見直しリストモード：形式一致 且つ reviewフラグが1のもの
+        base_data = [q for q in type_filtered_data if q.get('review') == 1]
+
+    # カテゴリ・フィルタ処理（サイドバーのリスト用）
     if base_data:
         cat_counts = {q['category']: sum(1 for x in base_data if x['category'] == q['category']) for q in base_data}
         cat_options = ["全カテゴリ"] + [f"{c} ({n}問)" for c, n in sorted(cat_counts.items())]
@@ -72,13 +76,15 @@ if st.session_state["authentication_status"]:
     if not filtered_data:
         if mode == "見直しリスト":
             st.info(f"現在、{q_type} の見直しリストは空です。")
-            render_review_chart([])
+            render_review_chart([])  # 枠だけ表示
         else:
             st.info("条件に合う問題がありません。設定を確認してください。")
     else:
         if mode == "見直しリスト":
+            # 【見直しモード：グラフと個別選択】
             st.subheader("📊 カテゴリ別見直し状況")
-            render_review_chart(base_data)
+            # 💡 重要：サイドバーのリスト（base_data）をそのまま渡すことで同期させる
+            render_review_chart(base_data) 
             
             st.markdown("---")
             st.subheader(f"📂 {selected_cat} の個別見直し")
@@ -98,6 +104,7 @@ if st.session_state["authentication_status"]:
                 ui.show_explanation_and_nav(q, mode)
         
         else:
+            # 【通常学習モード】
             if st.session_state.count >= target_total:
                 st.balloons()
                 st.success("🏆 目標達成！お疲れ様でした。")
