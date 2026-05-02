@@ -1,6 +1,6 @@
 import streamlit as st
 import random
-from database import load_data, get_user_review_ids  # DB操作関数を追加
+from database import load_data  # 存在する関数のみをインポート
 from styles import apply_custom_css
 import quiz_ui as ui
 from auth_utils import get_authenticator
@@ -15,7 +15,6 @@ authenticator.login(location='main')
 
 if st.session_state["authentication_status"]:
     # 🔓 ログイン成功時の処理
-    username = st.session_state["username"]  # ログイン中のユーザー名を取得
     authenticator.logout(button_name="ログアウト", location="sidebar")
     apply_custom_css()
     all_quiz_data = load_data()
@@ -30,22 +29,19 @@ if st.session_state["authentication_status"]:
             st.session_state[key] = 0 if key in ["count", "correct"] else None
 
     # --- 2. サイドバー制御 ---
-    st.sidebar.markdown(f"👤 **ユーザー: {username}**") # ログイン名を表示
     st.sidebar.markdown("### ⚙️ モード選択")
     mode = st.sidebar.radio("学習モード", ["通常学習", "見直しリスト"])
     st.sidebar.markdown("---")
     q_type = st.sidebar.radio("出題形式", ["四肢択一", "一問一答"])
 
-    # --- ユーザー専用の見直しリスト抽出ロジック ---
+    # データ抽出の基礎（モードと形式でフィルタ）
     if mode == "通常学習":
         base_data = [q for q in all_quiz_data if q['type'] == q_type]
     else:
-        # DBからこのユーザーが登録した問題IDリストを取得
-        user_review_ids = get_user_review_ids(username)
-        # IDが一致し、かつ形式が一致するものだけを抽出
-        base_data = [q for q in all_quiz_data if q['id'] in user_review_ids and q['type'] == q_type]
+        # 見直しリストモード：reviewフラグが1かつ形式が一致するもの
+        base_data = [q for q in all_quiz_data if q.get('review') == 1 and q['type'] == q_type]
 
-    # カテゴリ・フィルタ
+    # カテゴリ・フィルタ処理
     if base_data:
         cat_counts = {q['category']: sum(1 for x in base_data if x['category'] == q['category']) for q in base_data}
         cat_options = ["全カテゴリ"] + [f"{c} ({n}問)" for c, n in sorted(cat_counts.items())]
@@ -58,7 +54,7 @@ if st.session_state["authentication_status"]:
     else:
         filtered_data = []
 
-    # 共通設定（目標数とリセット）
+    # 共通設定
     st.sidebar.markdown("---")
     target_total = st.sidebar.slider("🎯 目標出題数", 5, 50, 10, 5)
     
@@ -73,15 +69,15 @@ if st.session_state["authentication_status"]:
     # --- 3. メインロジック ---
     if not filtered_data:
         if mode == "見直しリスト":
-            st.info(f"現在、{username} さんの {q_type} 見直しリストは空です。")
-            render_review_chart([]) 
+            st.info(f"現在、{q_type} の見直しリストは空です。")
+            render_review_chart([])  # 空の状態でもグラフ枠（0問表示）を出す
         else:
             st.info("条件に合う問題がありません。設定を確認してください。")
     else:
         if mode == "見直しリスト":
-            # 【見直しモード：グラフ表示と個別選択】
+            # 【見直しモード：グラフと個別選択】
             st.subheader("📊 カテゴリ別見直し状況")
-            render_review_chart(base_data) 
+            render_review_chart(base_data)  # charts.pyの関数を使用
             
             st.markdown("---")
             st.subheader(f"📂 {selected_cat} の個別見直し")
