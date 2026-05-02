@@ -1,6 +1,6 @@
 import streamlit as st
 import random
-from database import save_review_status
+# from database import save_review_status  # ← ⚠️ 一旦コメントアウトしてエラーを回避
 
 def render_quiz_card(q):
     """問題文を表示するカード"""
@@ -39,8 +39,8 @@ def show_explanation_and_nav(q, mode, filtered_data=None):
             if mode == "見直しリスト":
                 # 見直しリストモードでは、克服ボタンを表示
                 if st.button("✨ 克服した！（リストから削除）", use_container_width=True, key=f"fix_{q['id']}"):
-                    save_review_status(q['id'], False)
-                    st.toast("見直しリストから削除しました！")
+                    # save_review_status(q['id'], False) # ← ⚠️ 関数ができるまでお休み
+                    st.toast("見直しリストから削除しました！（※保存機能は準備中）")
                     st.session_state.current_question = None
                     st.session_state.show_explanation = False
                     st.session_state.last_result = None
@@ -49,24 +49,15 @@ def show_explanation_and_nav(q, mode, filtered_data=None):
                 # 通常学習モードでは、追加/解除を切り替え
                 is_review = q.get('review') == 1
                 
-                # ボタンの見た目を状態によって変える
                 if is_review:
-                    btn_label = "✅ 見直しリストに追加済み（クリックで解除）"
-                    btn_type = "secondary" # 登録済みは控えめな色に
+                    btn_label = "✅ 見直しリストに追加済み"
                 else:
                     btn_label = "🚩 見直しリストに追加"
-                    btn_type = "primary" # 未登録は目立つ色に
 
                 if st.button(btn_label, use_container_width=True, key=f"rev_btn_{q['id']}"):
-                    # フラグを反転させて保存
-                    save_review_status(q['id'], not is_review)
-                    # 状態を即時反映させるためにデータを書き換える
+                    # save_review_status(q['id'], not is_review) # ← ⚠️ 関数ができるまでお休み
                     q['review'] = 0 if is_review else 1
-                    
-                    if not is_review:
-                        st.toast("見直しリストに追加しました！")
-                    else:
-                        st.toast("見直しリストから外しました。")
+                    st.toast("見直しリストの状態を切り替えました！（※保存機能は準備中）")
                     st.rerun()
 
                 # 次の問題へボタン
